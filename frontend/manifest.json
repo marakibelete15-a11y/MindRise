@@ -1,0 +1,8 @@
+{
+  "name": "MindRise",
+  "short_name": "MindRise",
+  "start_url": "./pages/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f6f68"
+}
