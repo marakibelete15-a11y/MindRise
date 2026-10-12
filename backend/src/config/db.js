@@ -1,13 +1,39 @@
 'use strict';
 
 const { Pool } = require('pg');
+const env = require('./env');
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT || 5432),
-  database: process.env.DB_NAME || 'mindrise_dev',
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: env.dbHost,
+  port: env.dbPort,
+  database: env.dbName,
+  user: env.dbUser,
+  password: env.dbPassword,
 });
+
+pool.on('error', (error) => {
+  console.error('Unexpected PostgreSQL pool error:', error.message);
+});
+
+const query = pool.query.bind(pool);
+
+async function withTransaction(callback) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await callback(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+pool.pool = pool;
+pool.query = query;
+pool.withTransaction = withTransaction;
 
 module.exports = pool;

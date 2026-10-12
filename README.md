@@ -12,10 +12,10 @@ MindRise is a mobile-first mental health and peer-support platform for Ethiopian
 
 ```text
 MindRise/
-├── backend/       Express API, scripts, tests and avatar uploads
-├── frontend/      HTML pages, CSS, JavaScript and browser assets
-├── database/      PostgreSQL migrations, seeds and database docs
-├── docs/          Project-level documentation
+├── backend/       Express API, config, routes, services, repositories, tests and scripts
+├── frontend/      HTML screens, CSS, API modules, locales and browser assets
+├── database/      PostgreSQL migrations, test seeds and schema/security docs
+├── docs/          Project docs and the API contract
 └── .github/       GitHub contribution templates
 ```
 
@@ -29,3 +29,5 @@ MindRise/
 6. Start the development server: `npm run dev`.
 
 The API listens on `http://localhost:3000` by default. Its database-backed health endpoint is `/api/health`.
+
+The planned HTTP contract is documented in [docs/api.md](docs/api.md). Database-to-SRS mapping and outstanding database-only gaps are tracked in [database/docs/srs-coverage.md](database/docs/srs-coverage.md). Retention, encryption, FK deletion behavior, and schema audit evidence are documented under `database/docs/`.

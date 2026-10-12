@@ -1,0 +1,29 @@
+{
+  "nav": {
+    "home": "TO_VERIFY",
+    "assessment": "TO_VERIFY",
+    "routines": "TO_VERIFY",
+    "growth": "TO_VERIFY",
+    "community": "TO_VERIFY",
+    "profile": "TO_VERIFY",
+    "crisis": "TO_VERIFY"
+  },
+  "pages": {
+    "welcome": "TO_VERIFY",
+    "signup": "TO_VERIFY",
+    "verify": "TO_VERIFY",
+    "profileSetup": "TO_VERIFY",
+    "home": "TO_VERIFY",
+    "assessment": "TO_VERIFY",
+    "results": "TO_VERIFY",
+    "routines": "TO_VERIFY",
+    "growth": "TO_VERIFY",
+    "community": "TO_VERIFY",
+    "crisis": "TO_VERIFY",
+    "profile": "TO_VERIFY",
+    "moderator": "TO_VERIFY",
+    "login": "TO_VERIFY",
+    "recover": "TO_VERIFY",
+    "offline": "TO_VERIFY"
+  }
+}

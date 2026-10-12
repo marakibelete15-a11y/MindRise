@@ -1,0 +1,15 @@
+:root {
+  --color-background: #ffffff;
+  --color-text: #202a2a;
+  --color-primary: #1f6f68;
+  --color-border: #cbd3d1;
+  --space-unit: 0.25rem;
+  --space-small: 0.5rem;
+  --space-medium: 1rem;
+  --space-large: 2rem;
+  --type-small: 0.875rem;
+  --type-body: 1rem;
+  --type-heading: 1.5rem;
+}
+
+/* Keep the interface calm and low-clutter; reserve alarming colors for the crisis page only (SRS 4.1). */

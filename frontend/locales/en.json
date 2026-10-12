@@ -1,0 +1,29 @@
+{
+  "nav": {
+    "home": "Home",
+    "assessment": "Self-assessment",
+    "routines": "Routines",
+    "growth": "Growth",
+    "community": "Community",
+    "profile": "Profile and settings",
+    "crisis": "Crisis resources"
+  },
+  "pages": {
+    "welcome": "Welcome",
+    "signup": "Sign up",
+    "verify": "Verify account",
+    "profileSetup": "Set up profile",
+    "home": "Home",
+    "assessment": "Self-assessment",
+    "results": "Assessment results and history",
+    "routines": "Routines",
+    "growth": "Growth",
+    "community": "Community",
+    "crisis": "Crisis resources",
+    "profile": "Profile and settings",
+    "moderator": "Moderation",
+    "login": "Log in",
+    "recover": "Recover account",
+    "offline": "Offline"
+  }
+}
