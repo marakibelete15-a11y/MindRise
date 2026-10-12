@@ -2,7 +2,7 @@
 
 ## Indexes
 
-`007_indexes.sql` has a one-line reason above each index statement. Primary keys and declared `UNIQUE` constraints also create their own indexes. The dedicated indexes cover every FK not already leading a primary/unique index, common chronological feeds/history, unread notifications, and open moderation work.
+`007_indexes.sql` and `014_indexes_phase2.sql` provide a one-line reason for each index. Primary keys and declared `UNIQUE` constraints also create indexes. The dedicated indexes cover every FK not already leading a primary/unique index, common chronological feeds/history, unread notifications, open moderation work, crisis queues, and reported-account counting. `community_posts_space_fk_idx` is full (not partial) to cover the space FK for hidden and deleted posts too.
 
 ## FK Delete Behavior
 
@@ -31,5 +31,42 @@
 | moderation actions -> moderator/targets/report | SET NULL | Preserve audit evidence when related records are purged. |
 | user settings -> users | CASCADE | Settings belong exclusively to the account. |
 | notifications -> users | CASCADE | Notifications are private account data. |
+| verified identities -> users | CASCADE | Private identity is erased with its account. |
+| identity access log actor/target -> users | SET NULL | Preserve the audit event without retaining a deleted account reference. |
+| crisis flags -> flagged user | CASCADE | Remove the user's safety record on account purge. |
+| crisis flags -> assessment attempt/post/comment | SET NULL | Retain the safety queue record while allowing source data to be purged. |
+| crisis flags -> assigned moderator | SET NULL | Keep the flag when a moderator account is removed. |
+| community posts -> community space | RESTRICT | Preserve the topic reference while posts exist. |
+| post reactions -> post/user | CASCADE | Reactions are dependent on their post and account. |
+| reports -> reported user | CASCADE | A report about an account is removed when that target account is purged. |
+| community posts -> content reports | Existing CASCADE | Reports about purged posts have no actionable content target. |
+| completions -> goal | Existing SET NULL | Preserve activity history if the custom goal is removed. |
+| user stats -> users | CASCADE | Progress aggregates are account-owned. |
 
-The DB does not enforce that `assigned_to` or `moderator_id` has a moderator/admin role; API authorization must enforce that rule and migrations/seeds must preserve role data. A report target's exclusive post/comment check is enforced in SQL.
+The DB does not enforce that `assigned_to`, `actor_id`, `moderator_id`, or `assigned_to` has a moderator/admin role; API authorization must enforce that rule. Crisis source fields are mutually exclusive when populated, but may all become NULL after content purge. Report targets are exclusive and report uniqueness is enforced in SQL.
+
+## Foreign-key index coverage
+
+Every foreign key is indexed or is the leading column of a primary/unique index. The complete catalog verification query is:
+
+```sql
+WITH fk_columns AS (
+	SELECT conrelid::regclass AS table_name, a.attname AS column_name
+	FROM pg_constraint c
+	CROSS JOIN LATERAL unnest(c.conkey) WITH ORDINALITY k(attnum, ord)
+	JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum
+	WHERE c.contype = 'f'
+), indexed_columns AS (
+	SELECT i.indrelid::regclass AS table_name, a.attname AS column_name
+	FROM pg_index i
+	CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY k(attnum, ord)
+	JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = k.attnum
+	WHERE k.ord = 1
+)
+SELECT f.table_name, f.column_name
+FROM fk_columns f
+LEFT JOIN indexed_columns i USING (table_name, column_name)
+WHERE i.column_name IS NULL;
+```
+
+Expected result: zero rows. The query must be run against the migrated database before marking the index-coverage audit PASS.

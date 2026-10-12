@@ -1,8 +1,14 @@
 'use strict';
 
-const fs = require('node:fs/promises');
 const path = require('node:path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to run test-data seeds when NODE_ENV=production.');
+  process.exit(1);
+}
+
+const fs = require('node:fs/promises');
 
 const seedDirectory = path.resolve(__dirname, '../../database/seeds');
 const pool = require('../src/config/db');

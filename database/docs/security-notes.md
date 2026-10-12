@@ -1,0 +1,11 @@
+# Database Security Notes
+
+The database stores identity and assessment-answer columns as plain text or JSONB. Encryption is deliberately implemented outside SQL: the backend will encrypt first/last names and assessment answers using application-level AES-256-GCM, and database/storage volumes and backups must use disk encryption, per SRS 5.4. Key management and rotation belong to deployment operations and must not be stored beside ciphertext.
+
+`verified_identities` is restricted data. Only the authentication and account-management services may read the identity required for the account owner's login, verification, recovery, or contact change. Moderator and other-user APIs must never expose these values. Every privileged identity read must append an `identity_access_log` row with actor, target, reason, and timestamp; the backend must enforce this transactionally and audit access paths that bypass normal account APIs.
+
+`verification_challenges` does not persist a destination because that would create another stored copy of an email address or phone number. Signup/recovery delivery resolves a contact from the user's `verified_identities` row. For a pending contact change, the request supplies the proposed destination for delivery and must resupply it when verifying or requesting a resend; keep it transient and update `verified_identities` only after successful verification. A later API implementation must enforce this flow and avoid logging the transient value. Existing challenges at migration time retain their token hash and expiry, so a delivered code can still be verified; resending requires the destination again. `help_resources.contact_phone` is a provider contact number, not personal user identity, and remains separate from verified account contacts.
+
+Assessment answers are not included in moderator views or exports. The only exception is a narrowly scoped crisis-flag review, authorized and audited by the backend. A crisis flag indicates that resources should be surfaced; it is not a diagnosis. Do not place contact data, answers, OTPs, tokens, or request bodies in application logs.
+
+Local seeds contain fictional `.test` email accounts only. Hotline phone values, consent copy, clinical wording, and uncertain Amharic translations must remain `TO_VERIFY` until verified by an authorized human.
