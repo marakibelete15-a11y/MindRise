@@ -5,3 +5,5 @@ require('./health.test');
 require('./errors.test');
 require('./identity-privacy.test');
 require('./assessment.test');
+require('./resource.test');
+require('./assessmentService.test');
