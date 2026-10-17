@@ -4,3 +4,4 @@
 require('./health.test');
 require('./errors.test');
 require('./identity-privacy.test');
+require('./assessment.test');
