@@ -9,6 +9,7 @@ require('./tokens.test');
 require('./crypto.test');
 require('./middleware.test');
 require('./identity-privacy.test');
+require('./auth.test');
 
 const test = require('node:test');
 const db = require('./helpers/db');

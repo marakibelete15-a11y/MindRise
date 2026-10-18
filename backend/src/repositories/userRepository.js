@@ -39,6 +39,58 @@ async function findAuthContextById(id, client = null) {
   };
 }
 
+async function createUser(user, client = null) {
+  const queryExecutor = client || pool;
+  const sql = `
+    INSERT INTO users (id, role, status, password_hash)
+    VALUES ($1, $2, $3, $4)
+    RETURNING id, role, status, created_at
+  `;
+  const values = [
+    user.id,
+    user.role || 'youth',
+    user.status || 'active',
+    user.passwordHash,
+  ];
+  const result = await queryExecutor.query(sql, values);
+  return result.rows[0];
+}
+
+/**
+ * Initializes default user settings.
+ * SRS FR-5.2.
+ *
+ * @param {string} userId
+ * @param {object} [client]
+ * @returns {Promise<void>}
+ */
+async function createUserSettings(userId, client = null) {
+  const queryExecutor = client || pool;
+  await queryExecutor.query(
+    'INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING',
+    [userId]
+  );
+}
+
+/**
+ * Initializes default user stats (zeros).
+ * Migration 012.
+ *
+ * @param {string} userId
+ * @param {object} [client]
+ * @returns {Promise<void>}
+ */
+async function createUserStats(userId, client = null) {
+  const queryExecutor = client || pool;
+  await queryExecutor.query(
+    'INSERT INTO user_stats (user_id, points, current_streak, best_streak) VALUES ($1, 0, 0, 0) ON CONFLICT (user_id) DO NOTHING',
+    [userId]
+  );
+}
+
 module.exports = {
   findAuthContextById,
+  createUser,
+  createUserSettings,
+  createUserStats,
 };

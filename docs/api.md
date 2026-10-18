@@ -120,3 +120,109 @@ Errors conform to `{ "error": { "code": "...", "message": "...", "details": [...
 The `login`, `recover`, and `offline` screens are additional screens implied by the SRS flows even where the screen list does not name them explicitly. Identity values, assessment answers, reporter IDs, OTPs, and tokens must not be included in public responses or logs.
 
 For verification and resend requests with purpose `contact_change`, the proposed contact destination must be supplied again in each request. The API keeps it transient until verification succeeds; it must not be persisted in `verification_challenges` or logged. Resource responses expose a provider number as `contactPhone` (database `help_resources.contact_phone`), distinct from a user's verified phone number.
+
+## Authentication Endpoints (FR-1.1, FR-1.2)
+
+### POST `/api/auth/register`
+Creates a new youth account, encrypts real name identity details at rest, seeds user settings and stats, creates a signup verification challenge, and dispatches a 6-digit OTP.
+
+- **Access**: Public
+- **Request Body**:
+  ```json
+  {
+    "handle": "unique_alias",
+    "firstName": "Abebe",
+    "lastName": "Bikila",
+    "email": "abebe@example.com",
+    "password": "ValidPassword123",
+    "termsAccepted": true,
+    "disclaimerAccepted": true,
+    "consentVersion": "1.0"
+  }
+  ```
+  *Note: Provide exactly one of `email` or `phone` (Ethiopian local format e.g. `0911223344` or E.164 `+251911223344`).*
+- **Response** `201 Created`:
+  ```json
+  {
+    "token": "<JWT access token>",
+    "user": {
+      "id": "<uuid>",
+      "handle": "unique_alias",
+      "role": "youth",
+      "verified": false
+    }
+  }
+  ```
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: Field validation failed (e.g. invalid name characters, weak password, invalid phone format, unaccepted terms).
+  - `409 HANDLE_TAKEN`: Handle is already claimed by another user (case-insensitive).
+  - `409 ACCOUNT_EXISTS`: An account already exists for the given contact information (anti-enumeration generic message).
+
+### POST `/api/auth/verify`
+Verifies a pending signup challenge using the 6-digit OTP. Increments attempt counter before comparison. If 5 failed attempts occur, deactivates the challenge immediately.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Request Body**:
+  ```json
+  {
+    "code": "123456"
+  }
+  ```
+- **Response** `200 OK`:
+  ```json
+  {
+    "verified": true
+  }
+  ```
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: Code must be exactly 6 digits.
+  - `400 INVALID_CODE`: Code is incorrect or expired.
+  - `400 CODE_EXHAUSTED`: 5 failed attempts reached; challenge has been deactivated.
+  - `401 INVALID_TOKEN`: Missing or invalid bearer token.
+
+### POST `/api/auth/resend-code`
+Generates and dispatches a new 6-digit OTP for an unverified account. Consumes prior unconsumed signup challenges. Enforces cooldown and hourly rate limits.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Request Body**: `{}` (empty object)
+- **Response** `200 OK`:
+  ```json
+  {
+    "sent": true
+  }
+  ```
+- **Error Codes**:
+  - `401 INVALID_TOKEN`: Missing or invalid bearer token.
+  - `409 ALREADY_VERIFIED`: Account contact is already verified.
+  - `429 RATE_LIMIT_EXCEEDED`: Cooldown period still active or hourly limit (5 requests/hour) reached.
+
+### POST `/api/auth/login`
+Authenticates an existing user using email or phone and password. Employs constant-time dummy comparisons against nonexistent accounts to prevent user enumeration.
+
+- **Access**: Public
+- **Request Body**:
+  ```json
+  {
+    "identifier": "abebe@example.com",
+    "password": "ValidPassword123"
+  }
+  ```
+  *Note: `identifier` accepts email or Ethiopian phone number (`09...`, `07...`, or `+251...`).*
+- **Response** `200 OK`:
+  ```json
+  {
+    "token": "<JWT access token>",
+    "user": {
+      "id": "<uuid>",
+      "handle": "unique_alias",
+      "avatarUrl": null,
+      "role": "youth",
+      "verified": true,
+      "status": "active"
+    }
+  }
+  ```
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: Missing identifier or password.
+  - `401 INVALID_CREDENTIALS`: Identifier not found or password incorrect (identical error message and constant-time execution).
+  - `403 ACCOUNT_SUSPENDED`: Account is suspended or banned.

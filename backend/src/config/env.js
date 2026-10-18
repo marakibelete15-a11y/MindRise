@@ -6,7 +6,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const isTest = process.env.NODE_ENV === 'test';
 const isProd = process.env.NODE_ENV === 'production';
 
-const requiredInProduction = ['JWT_SECRET', 'DB_PASSWORD', 'DATA_ENCRYPTION_KEY'];
+const requiredInProduction = ['JWT_SECRET', 'DB_PASSWORD', 'DATA_ENCRYPTION_KEY', 'OTP_PEPPER'];
 if (isProd) {
   const missing = requiredInProduction.filter((name) => !process.env[name]);
   if (missing.length) {
@@ -43,6 +43,11 @@ if (!isTest && dataEncryptionKey) {
   }
 }
 
+let otpPepper = process.env.OTP_PEPPER;
+if (isTest && (!otpPepper || otpPepper.includes('replace_with'))) {
+  otpPepper = 'test_otp_pepper_secret_value_1234567890!';
+}
+
 module.exports = Object.freeze({
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT || 3000),
@@ -50,6 +55,16 @@ module.exports = Object.freeze({
   jwtSecret,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1d',
   dataEncryptionKey,
+  otpPepper: otpPepper || 'dev_otp_pepper_secret_value_1234567890!',
+  bcryptRounds: Number(process.env.BCRYPT_ROUNDS || (isTest ? 4 : 12)),
+  otpTtlMinutes: Number(process.env.OTP_TTL_MINUTES || 10),
+  otpMaxAttempts: Number(process.env.OTP_MAX_ATTEMPTS || 5),
+  otpResendSeconds: Number(process.env.OTP_RESEND_SECONDS || 60),
+  otpDriver: process.env.OTP_DRIVER || (isTest ? 'console' : (process.env.NODE_ENV === 'development' ? 'console' : 'email')),
+  smtpHost: process.env.SMTP_HOST || 'localhost',
+  smtpPort: Number(process.env.SMTP_PORT || 1025),
+  smtpUser: process.env.SMTP_USER || 'placeholder',
+  smtpPassword: process.env.SMTP_PASSWORD,
   dbHost: isTest ? (process.env.TEST_DB_HOST || '/tmp') : (process.env.DB_HOST || 'localhost'),
   dbPort: Number(process.env.DB_PORT || 5432),
   dbName: isTest ? (process.env.TEST_DB_NAME || 'mindrise_test') : (process.env.DB_NAME || 'mindrise_dev'),
