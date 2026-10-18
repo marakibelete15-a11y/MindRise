@@ -1,6 +1,19 @@
 'use strict';
 
-// Test entrypoint for node --test tests/. SRS API conventions. TODO: expand feature coverage as endpoints are implemented.
+process.env.NODE_ENV = 'test';
+
+// Test entrypoint for node --test tests/. SRS API conventions.
 require('./health.test');
 require('./errors.test');
+require('./tokens.test');
+require('./crypto.test');
+require('./middleware.test');
 require('./identity-privacy.test');
+
+const test = require('node:test');
+const db = require('./helpers/db');
+
+test.after(async () => {
+  await db.cleanup();
+  await db.endPool();
+});

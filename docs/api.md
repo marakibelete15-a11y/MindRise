@@ -2,6 +2,56 @@
 
 All endpoints are mounted under `/api`. Authenticated endpoints use `Authorization: Bearer <JWT>`. Requests and responses use JSON unless an avatar is uploaded as multipart form data. Errors use `{ "error": { "code": "...", "message": "..." } }`. List endpoints use opaque cursor paging (`limit`, `cursor`, `nextCursor`). Dates are ISO 8601 UTC strings unless a day-based field is explicitly a local calendar date.
 
+## Shared Contracts (Part 1 Foundation)
+
+### Authenticated Request Context (`req.user`)
+All routes protected by `requireAuth` receive a populated `req.user` object:
+```json
+{
+  "id": "uuid-string",
+  "role": "youth | moderator | admin",
+  "status": "active | suspended | banned | deletion_pending",
+  "verified": true,
+  "restrictedUntil": "ISO-8601-string | null"
+}
+```
+*Note: Real names, email, phone, and password hashes are never attached to `req.user`.*
+
+### Error Response Codes
+Errors conform to `{ "error": { "code": "...", "message": "...", "details": [...], "data": {...} } }`.
+- `INVALID_TOKEN` (401): Missing, malformed, expired, or invalid JWT bearer token.
+- `FORBIDDEN` (403): User role lacks required privileges for this endpoint.
+- `NOT_VERIFIED` (403): Endpoint requires verified contact credentials (FR-1.2).
+- `ACCOUNT_RESTRICTED` (403): Active temporary posting restriction (FR-7.5); `error.data` contains `{ "restrictedUntil": "ISO-string" }`.
+- `ACCOUNT_SUSPENDED` (403): Account is suspended or banned.
+- `ACCOUNT_DELETION_PENDING` (403): Account scheduled for deletion (unless route specifies `allowDeletionPending: true`).
+- `VALIDATION_ERROR` (400): Schema validation failure; `error.details` contains field-level `{ "field": "...", "message": "..." }`.
+- `NOT_FOUND` (404): Route or requested entity not found.
+- `INTERNAL_ERROR` (500): Server error without stack trace leakage.
+
+### JWT Access Tokens (SRS 2.7, FR-1.1)
+- Algorithm: pinned to `HS256`.
+- Claims: `{ "sub": "<user_id>", "role": "<role>" }`.
+- Lifetime: configured via `JWT_EXPIRES_IN` (default `1d`).
+- Identity privacy: Never contains names, emails, phones, or handles in the payload.
+
+### Cryptography Helpers (`utils/crypto.js` - SRS 5.4)
+- `encrypt(text, keyOverride?)`: AES-256-GCM encryption with fresh 12-byte IV. Returns `"v1:<iv>:<authTag>:<ciphertext>"`.
+- `decrypt(payload, keyOverride?)`: Verifies auth tag and returns plaintext utf8 string. Throws on tampering or bad format.
+- `encryptJson(obj, keyOverride?)`: Serializes and encrypts JSON data (for assessment answers/clinical fields).
+- `decryptJson(payload, keyOverride?)`: Decrypts and parses JSON object.
+
+### Test Helpers (`tests/helpers/`)
+- `tests/helpers/db.js`:
+  - `pool`, `query(sql, params)`
+  - `trackUser(userId)`: Tracks created test records.
+  - `cleanup()`: Cascades deletion of test-created rows from `mindrise_test`.
+  - `ensureMigrations()`: Runs pending migrations on test database.
+- `tests/helpers/auth.js`:
+  - `createTestUser({ role, verified, status, restrictedUntil, alias })`: Inserts complete test user and registers for cleanup.
+  - `makeToken(user)`: Signs valid JWT access token for test user.
+
+
 | Method | Path | Who may call | FR |
 | --- | --- | --- | --- |
 | GET | `/health` | Anyone | Operational |
