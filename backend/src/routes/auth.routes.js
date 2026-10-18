@@ -10,6 +10,8 @@ const {
   verifySchema,
   resendSchema,
   loginSchema,
+  recoverRequestSchema,
+  recoverConfirmSchema,
 } = require('../validators/auth.schemas');
 
 const router = express.Router();
@@ -18,5 +20,7 @@ router.post('/register', validate(registerSchema), authController.register);
 router.post('/verify', requireAuth, validate(verifySchema), authController.verify);
 router.post('/resend-code', requireAuth, validate(resendSchema), authController.resendCode);
 router.post('/login', validate(loginSchema), authController.login);
+router.post('/recover/request', validate(recoverRequestSchema), authController.recoverRequest);
+router.post('/recover/confirm', validate(recoverConfirmSchema), authController.recoverConfirm);
 
 module.exports = router;

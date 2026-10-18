@@ -159,9 +159,24 @@ const loginSchema = z.object({
 
 const resendSchema = z.object({}).passthrough();
 
+const recoverRequestSchema = z.object({
+  identifier: z.string({ required_error: 'Identifier is required' }).trim().min(1, 'Identifier is required'),
+});
+
+const recoverConfirmSchema = z.object({
+  identifier: z.string({ required_error: 'Identifier is required' }).trim().min(1, 'Identifier is required'),
+  code: z
+    .string({ required_error: 'Verification code is required' })
+    .trim()
+    .regex(/^\d{6}$/, 'Verification code must be exactly 6 digits'),
+  newPassword: passwordSchema,
+});
+
 module.exports = {
   registerSchema,
   verifySchema,
   resendSchema,
   loginSchema,
+  recoverRequestSchema,
+  recoverConfirmSchema,
 };

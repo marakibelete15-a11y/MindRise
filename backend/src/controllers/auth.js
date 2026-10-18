@@ -55,9 +55,42 @@ async function login(req, res, next) {
   }
 }
 
+/**
+ * Handles account recovery request.
+ * POST /api/auth/recover/request
+ * Always returns 202.
+ */
+async function recoverRequest(req, res, next) {
+  try {
+    const result = await authService.requestRecovery(req.body.identifier);
+    return res.status(202).json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+/**
+ * Handles account recovery confirmation.
+ * POST /api/auth/recover/confirm
+ */
+async function recoverConfirm(req, res, next) {
+  try {
+    const result = await authService.confirmRecovery(
+      req.body.identifier,
+      req.body.code,
+      req.body.newPassword
+    );
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   register,
   verify,
   resendCode,
   login,
+  recoverRequest,
+  recoverConfirm,
 };

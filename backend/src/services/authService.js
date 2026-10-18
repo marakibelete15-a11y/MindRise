@@ -311,9 +311,172 @@ async function login(rawIdentifier, password) {
   };
 }
 
+/**
+ * Initiates an account recovery challenge.
+ * SRS FR-1.8.
+ * Always returns 202 status and similar timing regardless of account existence.
+ *
+ * @param {string} rawIdentifier
+ * @returns {Promise<{ message: string }>}
+ */
+async function requestRecovery(rawIdentifier) {
+  const contactType = detectContactType(rawIdentifier);
+  let normalizedIdentifier;
+  if (contactType === 'email') {
+    try {
+      normalizedIdentifier = normalizeEmail(rawIdentifier);
+    } catch {
+      normalizedIdentifier = rawIdentifier.trim().toLowerCase();
+    }
+  } else {
+    try {
+      normalizedIdentifier = normalizePhone(rawIdentifier);
+    } catch {
+      normalizedIdentifier = rawIdentifier.trim();
+    }
+  }
+
+  const user = await identityRepository.findAuthByIdentifier(normalizedIdentifier);
+
+  if (user) {
+    // Check rate limit: max 5 recovery requests per hour per user
+    const hourlyCount = await challengeRepository.getRecentResendCount(user.id, 'recovery', 3600);
+    if (hourlyCount >= 5) {
+      throw new AppError(
+        429,
+        'RATE_LIMIT_EXCEEDED',
+        'Maximum recovery requests exceeded. Please try again in an hour.'
+      );
+    }
+
+    let otpCode;
+    let deliveryChannel;
+    let deliveryDestination;
+
+    await withTransaction(async (client) => {
+      // Consume older recovery challenges
+      await challengeRepository.consumeOlderRecoveryChallenges(user.id, client);
+
+      const contact = await identityRepository.findContactDestinationByUserId(user.id, client);
+      if (contact) {
+        deliveryChannel = contact.channel;
+        deliveryDestination = contact.destination;
+      } else {
+        deliveryChannel = contactType;
+        deliveryDestination = normalizedIdentifier;
+      }
+
+      otpCode = generateOtp();
+      const tokenHash = hashOtp(otpCode, env.otpPepper);
+      const expiresAt = new Date(Date.now() + env.otpTtlMinutes * 60 * 1000);
+
+      await challengeRepository.createChallenge(
+        {
+          userId: user.id,
+          channel: deliveryChannel,
+          purpose: 'recovery',
+          tokenHash,
+          expiresAt,
+        },
+        client
+      );
+    });
+
+    await otpSender.sendOtp({
+      channel: deliveryChannel,
+      destination: deliveryDestination,
+      code: otpCode,
+      purpose: 'recovery',
+    });
+  } else {
+    // Constant-time defense: run dummy hash to balance timing with existing account branch
+    await bcrypt.hash('dummy_recovery_defense', 4);
+  }
+
+  return {
+    message: 'If an account exists for this contact, a recovery code has been sent.',
+  };
+}
+
+/**
+ * Confirms an account recovery challenge and resets password.
+ * SRS FR-1.8.
+ *
+ * @param {string} rawIdentifier
+ * @param {string} code
+ * @param {string} newPassword
+ * @returns {Promise<{ message: string }>}
+ */
+async function confirmRecovery(rawIdentifier, code, newPassword) {
+  const contactType = detectContactType(rawIdentifier);
+  let normalizedIdentifier;
+  if (contactType === 'email') {
+    try {
+      normalizedIdentifier = normalizeEmail(rawIdentifier);
+    } catch {
+      normalizedIdentifier = rawIdentifier.trim().toLowerCase();
+    }
+  } else {
+    try {
+      normalizedIdentifier = normalizePhone(rawIdentifier);
+    } catch {
+      normalizedIdentifier = rawIdentifier.trim();
+    }
+  }
+
+  const user = await identityRepository.findAuthByIdentifier(normalizedIdentifier);
+
+  if (!user) {
+    // Constant-time dummy comparison and hash
+    verifyOtp(code, '0'.repeat(64), env.otpPepper);
+    await bcrypt.hash(newPassword, env.bcryptRounds);
+    throw new AppError(400, 'INVALID_CODE', 'Verification code is invalid or has expired.');
+  }
+
+  const challenge = await challengeRepository.findLatestUnconsumedRecoveryChallenge(user.id);
+  if (!challenge) {
+    // Run dummy bcrypt hash for timing consistency
+    await bcrypt.hash(newPassword, env.bcryptRounds);
+    throw new AppError(400, 'INVALID_CODE', 'Verification code is invalid or has expired.');
+  }
+
+  // Increment attempts BEFORE comparing (SRS FR-1.8)
+  const attempts = await challengeRepository.incrementAttempts(challenge.id);
+  const matches = verifyOtp(code, challenge.token_hash, env.otpPepper);
+
+  if (attempts >= env.otpMaxAttempts) {
+    await challengeRepository.consumeChallenge(challenge.id);
+    if (!matches) {
+      throw new AppError(
+        400,
+        'CODE_EXHAUSTED',
+        'Too many invalid attempts. This recovery code has been deactivated. Please request a new code.'
+      );
+    }
+  }
+
+  if (!matches) {
+    throw new AppError(400, 'INVALID_CODE', 'Verification code is invalid or has expired.');
+  }
+
+  // Valid code: hash new password and update user credentials in transaction
+  const newPasswordHash = await bcrypt.hash(newPassword, env.bcryptRounds);
+
+  await withTransaction(async (client) => {
+    await userRepository.updatePassword(user.id, newPasswordHash, client);
+    await challengeRepository.consumeChallenge(challenge.id, client);
+  });
+
+  return {
+    message: 'Password has been reset successfully.',
+  };
+}
+
 module.exports = {
   register,
   verify,
   resendCode,
   login,
+  requestRecovery,
+  confirmRecovery,
 };

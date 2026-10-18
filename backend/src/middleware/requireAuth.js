@@ -25,6 +25,14 @@ async function handleAuth(options, req, _res, next) {
       throw new AppError(401, 'INVALID_TOKEN', 'Authentication token is invalid.');
     }
 
+    // Invalidate sessions issued before password change (SRS FR-1.8)
+    if (user.passwordChangedAt && claims.iat) {
+      const passwordChangedSeconds = Math.floor(new Date(user.passwordChangedAt).getTime() / 1000);
+      if (claims.iat < passwordChangedSeconds) {
+        throw new AppError(401, 'INVALID_TOKEN', 'Session has expired due to password change. Please log in again.');
+      }
+    }
+
     if (user.status === 'suspended' || user.status === 'banned') {
       throw new AppError(403, 'ACCOUNT_SUSPENDED', 'Your account has been suspended.');
     }

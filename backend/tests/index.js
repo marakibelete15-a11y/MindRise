@@ -10,6 +10,7 @@ require('./crypto.test');
 require('./middleware.test');
 require('./identity-privacy.test');
 require('./auth.test');
+require('./stage3.test');
 
 const test = require('node:test');
 const db = require('./helpers/db');

@@ -70,5 +70,8 @@ module.exports = Object.freeze({
   dbName: isTest ? (process.env.TEST_DB_NAME || 'mindrise_test') : (process.env.DB_NAME || 'mindrise_dev'),
   dbUser: process.env.DB_USER,
   dbPassword: process.env.DB_PASSWORD,
-  uploadDir: process.env.UPLOAD_DIR || 'uploads/avatars',
+  uploadDir: isTest
+    ? (process.env.TEST_UPLOAD_DIR || '/tmp/mindrise_test_uploads/avatars')
+    : (process.env.UPLOAD_DIR ? path.resolve(process.env.UPLOAD_DIR) : path.resolve(__dirname, '../../uploads/avatars')),
+  maxAvatarBytes: Number(process.env.MAX_AVATAR_BYTES || 5242880),
 });

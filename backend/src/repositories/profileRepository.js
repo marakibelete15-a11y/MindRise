@@ -63,8 +63,52 @@ async function findByUserId(userId, client = null) {
   return result.rows[0] || null;
 }
 
+/**
+ * Updates a user's public profile.
+ * SRS FR-1.3, FR-1.7.
+ *
+ * @param {string} userId
+ * @param {object} data
+ * @param {string} [data.alias]
+ * @param {string|null} [data.bio]
+ * @param {string|null} [data.avatarPath]
+ * @param {object} [client]
+ * @returns {Promise<object>}
+ */
+async function updateProfile(userId, data, client = null) {
+  const queryExecutor = client || pool;
+  const updates = [];
+  const values = [userId];
+  let paramIdx = 2;
+
+  if (data.alias !== undefined) {
+    updates.push(`alias = $${paramIdx++}`);
+    values.push(data.alias);
+  }
+  if (data.bio !== undefined) {
+    updates.push(`bio = $${paramIdx++}`);
+    values.push(data.bio);
+  }
+  if (data.avatarPath !== undefined) {
+    updates.push(`avatar_path = $${paramIdx++}`);
+    values.push(data.avatarPath);
+  }
+
+  updates.push(`updated_at = now()`);
+
+  const sql = `
+    UPDATE profiles
+    SET ${updates.join(', ')}
+    WHERE user_id = $1
+    RETURNING user_id, alias, avatar_path, bio, updated_at
+  `;
+  const result = await queryExecutor.query(sql, values);
+  return result.rows[0];
+}
+
 module.exports = {
   createProfile,
   findByAlias,
   findByUserId,
+  updateProfile,
 };

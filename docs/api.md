@@ -226,3 +226,191 @@ Authenticates an existing user using email or phone and password. Employs consta
   - `400 VALIDATION_ERROR`: Missing identifier or password.
   - `401 INVALID_CREDENTIALS`: Identifier not found or password incorrect (identical error message and constant-time execution).
   - `403 ACCOUNT_SUSPENDED`: Account is suspended or banned.
+
+### POST `/api/auth/recover/request`
+Initiates an account recovery challenge. Always returns 202 with identical message and similar timing whether or not the account exists to prevent account enumeration.
+
+- **Access**: Public
+- **Rate Limit**: 5 requests per hour per IP and per identifier
+- **Request Body**:
+  ```json
+  {
+    "identifier": "abebe@example.com"
+  }
+  ```
+- **Response** `202 Accepted`:
+  ```json
+  {
+    "message": "If an account exists for this contact, a recovery code has been sent."
+  }
+  ```
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: Missing identifier.
+  - `429 RATE_LIMIT_EXCEEDED`: Too many recovery attempts.
+
+### POST `/api/auth/recover/confirm`
+Confirms recovery with 6-digit OTP and resets the user's password. Updates `password_changed_at` to invalidate all preexisting sessions.
+
+- **Access**: Public
+- **Request Body**:
+  ```json
+  {
+    "identifier": "abebe@example.com",
+    "code": "123456",
+    "newPassword": "NewStrongPassword123!"
+  }
+  ```
+- **Response** `200 OK`:
+  ```json
+  {
+    "message": "Password has been reset successfully."
+  }
+  ```
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: Code not 6 digits or password weak / short.
+  - `400 INVALID_CODE`: Code invalid or expired.
+  - `400 CODE_EXHAUSTED`: 5 failed attempts reached; challenge deactivated.
+
+## User Account & Profile Endpoints (FR-1.3, FR-1.7, FR-5.2)
+
+### GET `/api/me`
+Retrieves current authenticated user profile, account status, and settings. Never leaks real names, email, phone, or password hash.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Response** `200 OK`:
+  ```json
+  {
+    "id": "<uuid>",
+    "handle": "peaceful_runner",
+    "avatarUrl": "/api/avatars/<uuid>.webp",
+    "bio": "Self-reflection journey",
+    "role": "youth",
+    "status": "active",
+    "verified": true,
+    "settings": {
+      "language": "en",
+      "timezone": "Africa/Addis_Ababa",
+      "pushEnabled": true,
+      "emailEnabled": false,
+      "profileVisibility": "anonymous"
+    }
+  }
+  ```
+
+### PATCH `/api/me/profile`
+Updates handle and/or bio. Changing handle or avatar never touches `verified_identities`.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Request Body**:
+  ```json
+  {
+    "handle": "new_runner_alias",
+    "bio": "Updated bio text"
+  }
+  ```
+- **Response** `200 OK`:
+  ```json
+  {
+    "handle": "new_runner_alias",
+    "avatarUrl": "/api/avatars/<uuid>.webp",
+    "bio": "Updated bio text"
+  }
+  ```
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: Handle contains invalid characters or bio exceeds 500 chars.
+  - `409 HANDLE_TAKEN`: Handle is already claimed by another user (case-insensitive).
+
+### POST `/api/me/avatar`
+Uploads a user avatar. Re-encodes with Sharp to a 256x256 WebP image, stripping all EXIF metadata.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Content-Type**: `multipart/form-data` (field: `avatar`)
+- **Response** `200 OK`:
+  ```json
+  {
+    "avatarUrl": "/api/avatars/<uuid>.webp"
+  }
+  ```
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: File not an image (checked via magic bytes: JPEG, PNG, WebP only) or exceeds `MAX_AVATAR_BYTES`.
+
+### GET `/api/avatars/:file`
+Serves stored avatar images with path traversal defenses, `Content-Type: image/webp`, `X-Content-Type-Options: nosniff`, and public caching.
+
+- **Access**: Public
+- **Response** `200 OK`: Binary image data.
+- **Error Codes**:
+  - `404 NOT_FOUND`: Avatar file does not exist or filename invalid.
+
+### GET `/api/me/settings`
+Returns current user preferences.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Response** `200 OK`:
+  ```json
+  {
+    "language": "en",
+    "timezone": "Africa/Addis_Ababa",
+    "pushEnabled": true,
+    "emailEnabled": false,
+    "profileVisibility": "anonymous"
+  }
+  ```
+
+### PATCH `/api/me/settings`
+Updates user preferences. Validates timezone against valid IANA timezones.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Request Body**:
+  ```json
+  {
+    "language": "am",
+    "timezone": "Africa/Addis_Ababa",
+    "pushEnabled": true,
+    "emailEnabled": false,
+    "profileVisibility": "anonymous"
+  }
+  ```
+- **Response** `200 OK`: Updated settings object.
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: Invalid language code or non-existent IANA timezone.
+
+## Notification Endpoints (FR-5.x)
+
+### GET `/api/me/notifications` (or `/api/notifications`)
+Lists in-app notifications with cursor pagination and unread count.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Query Parameters**: `cursor` (ISO string), `limit` (int, default 20)
+- **Response** `200 OK`:
+  ```json
+  {
+    "items": [
+      {
+        "id": "<uuid>",
+        "type": "routine_reminder",
+        "title": "Evening Reflection",
+        "body": "Take a moment to check in with yourself.",
+        "payload": {},
+        "readAt": null,
+        "createdAt": "2026-10-18T05:00:00.000Z"
+      }
+    ],
+    "nextCursor": null,
+    "unreadCount": 1
+  }
+  ```
+
+### POST `/api/me/notifications/:id/read` (or `PATCH /api/notifications/:id/read`)
+Marks a single notification as read. Enforces strict ownership: returns 404 if notification belongs to another user.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Response** `200 OK`: `{ "id": "<uuid>", "read": true }`
+- **Error Codes**:
+  - `404 NOT_FOUND`: Notification does not exist or belongs to another user (IDOR defense).
+
+### POST `/api/me/notifications/read-all` (or `POST /api/notifications/read-all`)
+Marks all unread notifications for the current user as read.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Response** `200 OK`: `{ "success": true }`

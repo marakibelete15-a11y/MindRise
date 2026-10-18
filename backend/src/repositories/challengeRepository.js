@@ -162,12 +162,58 @@ async function getLatestChallenge(userId, purpose, client = null) {
   return result.rows[0] || null;
 }
 
+/**
+ * Finds the latest unconsumed, unexpired recovery challenge for a user.
+ * SRS FR-1.8.
+ *
+ * @param {string} userId
+ * @param {object} [client]
+ * @returns {Promise<object|null>}
+ */
+async function findLatestUnconsumedRecoveryChallenge(userId, client = null) {
+  const queryExecutor = client || pool;
+  const sql = `
+    SELECT id, user_id, channel, purpose, token_hash, expires_at, attempts, created_at
+    FROM verification_challenges
+    WHERE user_id = $1
+      AND purpose = 'recovery'
+      AND consumed_at IS NULL
+      AND expires_at > now()
+    ORDER BY created_at DESC
+    LIMIT 1
+  `;
+  const result = await queryExecutor.query(sql, [userId]);
+  return result.rows[0] || null;
+}
+
+/**
+ * Consumes any older unconsumed recovery challenges for a user.
+ * SRS FR-1.8.
+ *
+ * @param {string} userId
+ * @param {object} [client]
+ * @returns {Promise<void>}
+ */
+async function consumeOlderRecoveryChallenges(userId, client = null) {
+  const queryExecutor = client || pool;
+  const sql = `
+    UPDATE verification_challenges
+    SET consumed_at = now()
+    WHERE user_id = $1
+      AND purpose = 'recovery'
+      AND consumed_at IS NULL
+  `;
+  await queryExecutor.query(sql, [userId]);
+}
+
 module.exports = {
   createChallenge,
   findLatestUnconsumedSignupChallenge,
+  findLatestUnconsumedRecoveryChallenge,
   incrementAttempts,
   consumeChallenge,
   consumeOlderSignupChallenges,
+  consumeOlderRecoveryChallenges,
   getRecentResendCount,
   getLatestChallenge,
 };
