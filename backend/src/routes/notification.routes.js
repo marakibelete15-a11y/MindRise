@@ -1,6 +1,15 @@
 'use strict';
 
-// Planned: GET /notifications, PATCH /notifications/:id/read, POST /notifications/read-all. SRS FR-5.x. TODO: register handlers.
+// Notification routes. SRS FR-5.x.
 const express = require('express');
+const notificationController = require('../controllers/notification');
+const requireAuth = require('../middleware/requireAuth');
 
-module.exports = express.Router();
+const router = express.Router();
+
+router.get('/notifications', requireAuth, notificationController.listNotifications);
+router.patch('/notifications/:id/read', requireAuth, notificationController.markNotificationRead);
+router.post('/notifications/:id/read', requireAuth, notificationController.markNotificationRead);
+router.post('/notifications/read-all', requireAuth, notificationController.markAllNotificationsRead);
+
+module.exports = router;

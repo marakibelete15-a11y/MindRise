@@ -31,3 +31,12 @@ MindRise/
 The API listens on `http://localhost:3000` by default. Its database-backed health endpoint is `/api/health`.
 
 The planned HTTP contract is documented in [docs/api.md](docs/api.md). Database-to-SRS mapping and outstanding database-only gaps are tracked in [database/docs/srs-coverage.md](database/docs/srs-coverage.md). Retention, encryption, FK deletion behavior, and schema audit evidence are documented under `database/docs/`.
+
+## Testing
+
+Automated tests run against an isolated test database whose name must end with `_test` (default `mindrise_test`).
+
+1. Create the test database: `createdb mindrise_test`
+2. Apply database migrations to the test database: `npm run db:migrate:test`
+3. Run the automated test suite: `npm test`
+
