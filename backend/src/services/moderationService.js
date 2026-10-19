@@ -1,6 +1,7 @@
 
 'use strict';
 
+const db = require('../config/db');
 const repo = require('../repositories/moderationRepository');
 const moderationConfig = require('../config/moderation');
 
@@ -37,7 +38,81 @@ function checkPagination({ limit = 20, offset = 0 } = {}) {
   return { limit, offset };
 }
 
-// Submit a community report.
+// Apply an automatic restriction when reports exceed the threshold.
+// The user row is locked to prevent competing restriction updates.
+async function applyAutomaticRestriction(targetUserId, reportTarget) {
+  if (!targetUserId) {
+    return null;
+  }
+
+  return db.withTransaction(async (client) => {
+    const userResult = await client.query(
+      `SELECT id, role, status, restricted_until, restriction_reason
+       FROM users
+       WHERE id = $1
+       FOR UPDATE`,
+      [targetUserId]
+    );
+
+    const target = userResult.rows[0];
+
+    if (!target || target.role !== 'youth' || target.status !== 'active') {
+      return null;
+    }
+
+    // Do not overwrite an existing active restriction.
+    if (
+      target.restricted_until &&
+      new Date(target.restricted_until).getTime() > Date.now()
+    ) {
+      return null;
+    }
+
+    const countResult = await client.query(
+      `SELECT COUNT(DISTINCT reporter_id)::int AS count
+       FROM content_reports
+       WHERE created_at >= NOW() -
+         ($4::int * INTERVAL '1 hour')
+         AND (
+           ($1::uuid IS NOT NULL AND post_id = $1)
+           OR ($2::uuid IS NOT NULL AND comment_id = $2)
+           OR ($3::uuid IS NOT NULL AND reported_user_id = $3)
+         )`,
+      [
+        reportTarget.postId || null,
+        reportTarget.commentId || null,
+        reportTarget.reportedUserId || null,
+        moderationConfig.reportWindowHours,
+      ]
+    );
+
+    const count = countResult.rows[0].count;
+
+    if (count <= moderationConfig.reportThreshold) {
+      return null;
+    }
+
+    const until = new Date(
+      Date.now() + moderationConfig.restrictionHours * 60 * 60 * 1000
+    );
+
+    const reason =
+      'Automatic community safety restriction pending moderator review';
+
+    const result = await client.query(
+      `UPDATE users
+       SET restricted_until = $2,
+           restriction_reason = $3
+       WHERE id = $1
+       RETURNING id, restricted_until, restriction_reason`,
+      [targetUserId, until, reason]
+    );
+
+    return result.rows[0] || null;
+  });
+}
+
+// Submit a report about one post, comment, or account.
 async function submitReport(user, data) {
   if (!user || !user.id) {
     fail('Authentication required', 401);
@@ -79,11 +154,26 @@ async function submitReport(user, data) {
     fail('You cannot report your own account');
   }
 
-  const report = await repo.createReport({
-    reporterId: user.id,
+  const reportTarget = {
     postId: data.postId || null,
     commentId: data.commentId || null,
     reportedUserId: data.reportedUserId || null,
+  };
+
+  // Resolve the content owner before accepting a report.
+  const targetUserId = await repo.getReportedAccountId(reportTarget);
+
+  if (!targetUserId) {
+    fail('Report target not found', 404);
+  }
+
+  if (targetUserId === user.id) {
+    fail('You cannot report your own content');
+  }
+
+  const report = await repo.createReport({
+    reporterId: user.id,
+    ...reportTarget,
     reason: data.reason.trim(),
     details: data.details || null,
   });
@@ -92,39 +182,24 @@ async function submitReport(user, data) {
     fail('You have already reported this target', 409);
   }
 
-  // Count distinct reporters within the configured time window.
-  const reportCount = await repo.countRecentReports({
-    postId: data.postId || null,
-    commentId: data.commentId || null,
-    reportedUserId: data.reportedUserId || null,
-    hours: moderationConfig.reportWindowHours,
-  });
-
-  // FR-7.5: Restrict accounts when the configured threshold
-  // is exceeded. Enforcement is not implemented yet.
-  //
-  // Before enabling it, we must identify the author of
-  // reported posts/comments and apply the restriction safely.
-  if (reportCount > moderationConfig.reportThreshold) {
-    // Automatic restriction processing pending.
-  }
+  await applyAutomaticRestriction(targetUserId, reportTarget);
 
   return report;
 }
 
-// Moderator report queue.
+// Retrieve the moderator's pending report queue.
 async function getReportQueue(user, options = {}) {
   requireModerator(user);
   return repo.listReports(checkPagination(options));
 }
 
-// Moderator audit history.
+// Retrieve moderation audit history.
 async function getModerationHistory(user, options = {}) {
   requireModerator(user);
   return repo.listActions(checkPagination(options));
 }
 
-// View one report.
+// Retrieve one report for moderator review.
 async function getReport(user, reportId) {
   requireModerator(user);
 
@@ -137,7 +212,6 @@ async function getReport(user, reportId) {
   return report;
 }
 
-// Validate content moderation action.
 function validateContentAction(targetType, action) {
   const actions = {
     post: {
@@ -161,15 +235,17 @@ function validateContentAction(targetType, action) {
   return status;
 }
 
-// Moderate a community post or comment.
-// NOTE: Transaction required before exposing via HTTP.
-async function moderateContent(user, {
-  targetType,
-  targetId,
-  action,
-  reason = null,
-  reportId = null,
-}) {
+// Hide, restore, or remove reported content.
+async function moderateContent(
+  user,
+  {
+    targetType,
+    targetId,
+    action,
+    reason = null,
+    reportId = null,
+  }
+) {
   requireModerator(user);
 
   if (!targetId) {
@@ -199,7 +275,6 @@ async function moderateContent(user, {
 }
 
 // Dismiss a report.
-// NOTE: Transaction required before exposing via HTTP.
 async function dismissReport(user, reportId, reason = null) {
   requireModerator(user);
 
@@ -225,8 +300,7 @@ async function dismissReport(user, reportId, reason = null) {
   return updated;
 }
 
-// Restrict a user temporarily.
-// NOTE: Transaction required before exposing via HTTP.
+// Manually restrict an account.
 async function restrictUser(user, targetUserId, hours, reason) {
   requireModerator(user);
 
@@ -266,8 +340,7 @@ async function restrictUser(user, targetUserId, hours, reason) {
   return updated;
 }
 
-// Reverse a temporary restriction.
-// NOTE: Transaction required before exposing via HTTP.
+// Reverse a restriction.
 async function unrestrictUser(user, targetUserId, reason = null) {
   requireModerator(user);
 
@@ -300,4 +373,5 @@ module.exports = {
   dismissReport,
   restrictUser,
   unrestrictUser,
+  applyAutomaticRestriction,
 };
