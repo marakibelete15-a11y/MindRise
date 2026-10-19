@@ -2,6 +2,7 @@
 'use strict';
 
 const repo = require('../repositories/moderationRepository');
+const moderationConfig = require('../config/moderation');
 
 function fail(message, status = 400) {
   const error = new Error(message);
@@ -23,8 +24,13 @@ function checkPagination({ limit = 20, offset = 0 } = {}) {
   limit = Number(limit);
   offset = Number(offset);
 
-  if (!Number.isInteger(limit) || limit < 1 || limit > 100 ||
-      !Number.isInteger(offset) || offset < 0) {
+  if (
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 100 ||
+    !Number.isInteger(offset) ||
+    offset < 0
+  ) {
     fail('Invalid pagination');
   }
 
@@ -51,15 +57,21 @@ async function submitReport(user, data) {
     fail('Choose exactly one report target');
   }
 
-  if (typeof data.reason !== 'string' ||
-      data.reason.trim().length < 2 ||
-      data.reason.trim().length > 100) {
+  if (
+    typeof data.reason !== 'string' ||
+    data.reason.trim().length < 2 ||
+    data.reason.trim().length > 100
+  ) {
     fail('Reason must contain 2-100 characters');
   }
 
-  if (data.details != null &&
-      (typeof data.details !== 'string' ||
-       data.details.length > 2000)) {
+  if (
+    data.details != null &&
+    (
+      typeof data.details !== 'string' ||
+      data.details.length > 2000
+    )
+  ) {
     fail('Details must be 2000 characters or fewer');
   }
 
@@ -78,6 +90,23 @@ async function submitReport(user, data) {
 
   if (!report) {
     fail('You have already reported this target', 409);
+  }
+
+  // Count distinct reporters within the configured time window.
+  const reportCount = await repo.countRecentReports({
+    postId: data.postId || null,
+    commentId: data.commentId || null,
+    reportedUserId: data.reportedUserId || null,
+    hours: moderationConfig.reportWindowHours,
+  });
+
+  // FR-7.5: Restrict accounts when the configured threshold
+  // is exceeded. Enforcement is not implemented yet.
+  //
+  // Before enabling it, we must identify the author of
+  // reported posts/comments and apply the restriction safely.
+  if (reportCount > moderationConfig.reportThreshold) {
+    // Automatic restriction processing pending.
   }
 
   return report;
@@ -132,9 +161,8 @@ function validateContentAction(targetType, action) {
   return status;
 }
 
-// Content moderation.
-// NOTE: Must be wrapped in a database transaction before
-// connecting this function to an HTTP route.
+// Moderate a community post or comment.
+// NOTE: Transaction required before exposing via HTTP.
 async function moderateContent(user, {
   targetType,
   targetId,
@@ -204,8 +232,11 @@ async function restrictUser(user, targetUserId, hours, reason) {
 
   const duration = Number(hours);
 
-  if (!Number.isFinite(duration) ||
-      duration <= 0 || duration > 720) {
+  if (
+    !Number.isFinite(duration) ||
+    duration <= 0 ||
+    duration > 720
+  ) {
     fail('Restriction duration must be 1-720 hours');
   }
 
@@ -239,6 +270,10 @@ async function restrictUser(user, targetUserId, hours, reason) {
 // NOTE: Transaction required before exposing via HTTP.
 async function unrestrictUser(user, targetUserId, reason = null) {
   requireModerator(user);
+
+  if (!targetUserId) {
+    fail('Invalid target user');
+  }
 
   const updated = await repo.unrestrictUser(targetUserId);
 
