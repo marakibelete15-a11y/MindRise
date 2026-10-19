@@ -204,6 +204,44 @@ async function countRecentReports({
   return result.rows[0].count;
 }
 
+// Identify the account responsible for reported content.
+// Used by automatic restrictions under FR-7.5.
+async function getReportedAccountId({
+  postId = null,
+  commentId = null,
+  reportedUserId = null,
+}) {
+  if (reportedUserId) {
+    return reportedUserId;
+  }
+
+  if (postId) {
+    const result = await db.query(
+      `SELECT author_id
+       FROM community_posts
+       WHERE id = $1
+         AND deleted_at IS NULL`,
+      [postId]
+    );
+
+    return result.rows[0]?.author_id || null;
+  }
+
+  if (commentId) {
+    const result = await db.query(
+      `SELECT author_id
+       FROM community_comments
+       WHERE id = $1
+         AND deleted_at IS NULL`,
+      [commentId]
+    );
+
+    return result.rows[0]?.author_id || null;
+  }
+
+  return null;
+}
+
 module.exports = {
   createReport,
   listReports,
@@ -216,4 +254,5 @@ module.exports = {
   recordAction,
   listActions,
   countRecentReports,
+  getReportedAccountId,
 };
