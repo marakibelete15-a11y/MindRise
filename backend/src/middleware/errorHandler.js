@@ -6,5 +6,12 @@ module.exports = function errorHandler(error, _request, response, _next) {
   const statusCode = pgStatuses[error.code] || error.statusCode || 500;
   const code = error.publicCode || (statusCode === 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR');
   const message = statusCode === 500 ? 'An unexpected error occurred.' : (error.safeMessage || 'The request could not be completed.');
-  response.status(statusCode).json({ error: { code, message } });
+  const errorPayload = { code, message };
+  if (error.data) {
+    errorPayload.data = error.data;
+  }
+  if (error.details) {
+    errorPayload.details = error.details;
+  }
+  response.status(statusCode).json({ error: errorPayload });
 };

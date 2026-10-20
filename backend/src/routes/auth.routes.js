@@ -1,6 +1,26 @@
 'use strict';
 
-// Planned: POST /auth/register, /auth/verify, /auth/resend-code, /auth/login, /auth/recover/request, /auth/recover/confirm. SRS FR-1.1, 1.2, 1.8. TODO: register handlers.
+// Authentication routes. SRS FR-1.1, FR-1.2, FR-1.8.
 const express = require('express');
+const authController = require('../controllers/auth');
+const validate = require('../middleware/validate');
+const requireAuth = require('../middleware/requireAuth');
+const {
+  registerSchema,
+  verifySchema,
+  resendSchema,
+  loginSchema,
+  recoverRequestSchema,
+  recoverConfirmSchema,
+} = require('../validators/auth.schemas');
 
-module.exports = express.Router();
+const router = express.Router();
+
+router.post('/register', validate(registerSchema), authController.register);
+router.post('/verify', requireAuth, validate(verifySchema), authController.verify);
+router.post('/resend-code', requireAuth, validate(resendSchema), authController.resendCode);
+router.post('/login', validate(loginSchema), authController.login);
+router.post('/recover/request', validate(recoverRequestSchema), authController.recoverRequest);
+router.post('/recover/confirm', validate(recoverConfirmSchema), authController.recoverConfirm);
+
+module.exports = router;
