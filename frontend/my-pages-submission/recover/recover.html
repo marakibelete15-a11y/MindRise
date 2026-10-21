@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EAF4EE">
+<title>MindRise – Create Account</title>
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="recover.css">
+</head>
+<body>
+<div class="shell">
+
+  <!-- BEGIN: TopBar -->
+  <header class="screen-header">
+    <button id="backBtn" class="back-btn tap-highlight-transparent" type="button" aria-label="Go back">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+    </button>
+
+    <span class="screen-title">Create Account</span>
+
+    <button class="account-btn" id="profileBtn" type="button" aria-label="Account details">
+      <svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2.25c-4.28 0-7.75 2.15-7.75 4.8V21h15.5v-1.95c0-2.65-3.47-4.8-7.75-4.8Z"></path>
+      </svg>
+    </button>
+  </header>
+  <!-- END: TopBar -->
+
+
+  <main>
+
+    <!-- BEGIN: TrustBadge -->
+    <div class="trust-row">
+      <span class="trust-pill">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="5" y="10" width="14" height="10" rx="2"></rect>
+          <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" stroke-linecap="round"></path>
+        </svg>
+        Encrypted &amp; Secure Account System
+      </span>
+    </div>
+    <!-- END: TrustBadge -->
+
+
+    <!-- BEGIN: AccountHero -->
+    <section class="account-hero" aria-hidden="true">
+      <div class="account-halo">
+        <div class="account-halo-inner">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+            <rect x="7" y="2.5" width="10" height="19" rx="2.5"></rect>
+            <circle cx="12" cy="18" r="0.9" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </div>
+      </div>
+      <span class="welcome-pill">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <path d="M20 11.5a7.6 7.6 0 0 1-11.3 6.7L4 19.5l1.2-4.4A7.6 7.6 0 1 1 20 11.5Z" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        Welcome back
+      </span>
+    </section>
+    <!-- END: AccountHero -->
+
+
+    <!-- BEGIN: HeroTitleSection -->
+    <section class="header-titles">
+      <h1>This account already exists</h1>
+      <p>
+        Looks like you&rsquo;ve already signed up with
+        <strong id="leadPhone">(555) 382&ndash;9104</strong>.
+        Would you like to log in instead, or recover your account?
+      </p>
+    </section>
+    <!-- END: HeroTitleSection -->
+
+
+    <!-- BEGIN: AccountFoundCard -->
+    <section class="card account-card" aria-label="Account found">
+
+      <div class="card-head">
+        <span class="label">ACCOUNT FOUND</span>
+        <span class="badge" id="verified">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 12.5l5 5L20 6.5"></path>
+          </svg>
+          Verified on file
+        </span>
+      </div>
+
+      <div class="acct">
+        <div class="phone-tile">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true">
+            <rect x="7" y="2.5" width="10" height="19" rx="2.5"></rect>
+            <circle cx="12" cy="18" r="0.9" fill="currentColor" stroke="none"></circle>
+          </svg>
+        </div>
+        <div class="acct-meta">
+          <div class="num" id="phone">(555) 382&ndash;9104</div>
+          <div class="since"><i></i>Member since <span id="since">October 2023</span></div>
+        </div>
+      </div>
+
+      <div class="note">
+        <span class="note-icon">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 21v-7"></path>
+            <path d="M12 14c0-3.6 2.6-6.1 7-6.1 0 4.6-3.1 6.1-7 6.1Z"></path>
+            <path d="M12 14c0-3.6-2.6-6.1-7-6.1 0 4.6 3.1 6.1 7 6.1Z"></path>
+          </svg>
+        </span>
+        <span>Your wellness logs, mindful reflections, and privacy goals are waiting safely for you.</span>
+      </div>
+    </section>
+    <!-- END: AccountFoundCard -->
+
+
+    <!-- BEGIN: Actions -->
+    <div class="actions">
+      <button class="continue-btn tap-highlight-transparent" id="loginBtn" type="button">
+        <span>Log In with Password</span>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+
+      <button class="outline-btn tap-highlight-transparent" id="recoverBtn" type="button">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+          <circle cx="6.5" cy="17.5" r="3"></circle>
+          <path d="M9 15l5.5-5.5M14.5 9.5L17 7M14.5 9.5l2 2M17 7h4" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        Recover Account
+      </button>
+    </div>
+    <!-- END: Actions -->
+
+
+    <!-- BEGIN: SupportFooter -->
+    <div class="support-footer">
+      <p class="support-line">
+        Need help?
+        <button class="support-link tap-highlight-transparent" id="supportBtn" type="button">
+          Contact MindRise Support
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+            <path d="M4 5.5h16v10H9l-5 4v-14Z" stroke-linejoin="round"></path>
+            <path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01" stroke-width="2.4" stroke-linecap="round"></path>
+          </svg>
+        </button>
+      </p>
+      <p class="meta">Confidential Care <i></i> Response time under 10 mins</p>
+    </div>
+    <!-- END: SupportFooter -->
+
+  </main>
+
+</div>
+
+
+<div class="modal" id="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="x" id="mClose" aria-label="Close">&times;</button>
+    <h3 id="mTitle"></h3>
+    <div id="mBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="recover.js"></script>
+</body>
+</html>
