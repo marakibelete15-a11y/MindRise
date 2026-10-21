@@ -80,8 +80,16 @@ const updateSettingsSchema = z
     }
   );
 
+const deleteAccountSchema = z.object({
+  password: z
+    .string({ required_error: 'Password is required to confirm account deletion.' })
+    .min(8, 'Password must be at least 8 characters.')
+    .max(128, 'Password must be at most 128 characters.'),
+});
+
 module.exports = {
   updateProfileSchema,
   updateSettingsSchema,
+  deleteAccountSchema,
   isValidIanaTimezone,
 };

@@ -24,7 +24,7 @@ async function findAuthContextById(id, client = null) {
       (vi.email_verified_at IS NOT NULL OR vi.phone_verified_at IS NOT NULL) AS verified
     FROM users u
     LEFT JOIN verified_identities vi ON vi.user_id = u.id
-    WHERE u.id = $1 AND u.deleted_at IS NULL
+    WHERE u.id = $1 AND (u.deleted_at IS NULL OR u.status = 'deletion_pending')
   `;
   const result = await queryExecutor.query(sql, [id]);
   if (result.rows.length === 0) {

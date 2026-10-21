@@ -15,11 +15,12 @@ const AppError = require('../utils/AppError');
  * @param {string} [params.purpose='signup']
  * @returns {Promise<void>}
  */
-async function sendOtp({ channel, destination, code, purpose = 'signup' }) {
-  const driver = env.otpDriver;
+async function sendOtp({ channel, destination, code, purpose = 'signup' }, envOverride = null) {
+  const currentEnv = envOverride || env;
+  const driver = currentEnv.otpDriver;
 
   if (driver === 'console') {
-    if (env.nodeEnv === 'production') {
+    if (currentEnv.nodeEnv === 'production') {
       throw new AppError(500, 'INTERNAL_ERROR', 'Console OTP driver is not permitted in production.');
     }
     // Only prints in development / test environments

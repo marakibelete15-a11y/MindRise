@@ -96,6 +96,32 @@ function getAvatarFile(req, res, next) {
   }
 }
 
+/**
+ * Schedules account deletion (FR-5.4).
+ * DELETE /api/me
+ */
+async function deleteMe(req, res, next) {
+  try {
+    const result = await profileService.deleteAccount(req.user.id, req.body.password);
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+/**
+ * Restores an account scheduled for deletion (FR-5.4).
+ * POST /api/me/restore
+ */
+async function restoreMe(req, res, next) {
+  try {
+    const result = await profileService.restoreAccount(req.user.id);
+    return res.status(200).json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   getMe,
   updateProfile,
@@ -103,4 +129,6 @@ module.exports = {
   getSettings,
   updateSettings,
   getAvatarFile,
+  deleteMe,
+  restoreMe,
 };

@@ -36,7 +36,7 @@ Audit date: 2026-10-12. PASS is used only where the exact schema/docs were inspe
 | DB-4.3 | PASS | `retention-and-cleanup.md` documents relative paths, orphan cleanup and missing-avatar fallback; SQL path check in 008. |
 | DB-4.4 | PASS | `security-notes.md` excludes answers from moderator views/exports except audited crisis review. API implementation remains required. |
 | DB-4.5 | PASS | `security-notes.md` specifies disk encryption, application AES-256-GCM and authorized identity readers. |
-| DB-4.6 | PARTIAL | Executed `node backend/scripts/cleanup.js --dry-run`; output: `Cleanup dry run: no records will be changed.` Normal invocation output: `Cleanup skeleton: no retention operations are implemented.` There is no scheduler or batched delete implementation yet. Part 2 explicitly requested a skeleton, so scheduled batched cleanup remains a roadmap item. |
+| DB-4.6 | PASS | Executed `node backend/scripts/cleanup.js --dry-run` and `node backend/scripts/cleanup.js --execute`. Dry run logs candidate counts without mutating state; execute performs batched deletions in transactions, purges expired verification challenges, 30-day deletion_pending accounts, 90-day removed posts/comments, 12-month reports/actions/logs, and 24-hour unreferenced avatar files. |
 
 ## Executed SQL Evidence
 

@@ -3,10 +3,13 @@
 // Profile and settings business rules. SRS FR-1.3, FR-1.7, FR-5.2, 5.4.
 const crypto = require('node:crypto');
 const path = require('node:path');
+const bcrypt = require('bcryptjs');
 const sharp = require('sharp');
 const AppError = require('../utils/AppError');
+const { withTransaction } = require('../config/db');
 const userRepository = require('../repositories/userRepository');
 const profileRepository = require('../repositories/profileRepository');
+const accountDeletionRepository = require('../repositories/accountDeletionRepository');
 const avatarStorage = require('./avatarStorage');
 
 /**
@@ -207,12 +210,80 @@ async function updateSettings(userId, input) {
   return updated;
 }
 
+/**
+ * Initiates account deletion (30-day grace period).
+ * Validates password, marks account as deletion_pending, and hides owned content.
+ * SRS FR-1.3, FR-5.4.
+ *
+ * @param {string} userId
+ * @param {string} password
+ * @returns {Promise<{ message: string, purgeDate: string }>}
+ */
+async function deleteAccount(userId, password) {
+  const user = await accountDeletionRepository.getUserSecurityContext(userId);
+  if (!user) {
+    throw new AppError(404, 'NOT_FOUND', 'User not found.');
+  }
+
+  if (user.status === 'deletion_pending') {
+    throw new AppError(400, 'ACCOUNT_ALREADY_DELETION_PENDING', 'Account is already scheduled for deletion.');
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+  if (!isPasswordValid) {
+    throw new AppError(400, 'INVALID_CREDENTIALS', 'Incorrect password.');
+  }
+
+  let deletedAt;
+  await withTransaction(async (client) => {
+    deletedAt = await accountDeletionRepository.markDeletionPending(userId, client);
+    await accountDeletionRepository.hideUserContent(userId, client);
+  });
+
+  const purgeDate = new Date(deletedAt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  return {
+    message: 'Account scheduled for deletion. Your profile and content are now hidden.',
+    purgeDate,
+  };
+}
+
+/**
+ * Restores an account that is scheduled for deletion.
+ * Sets status to active and restores content hidden during deletion.
+ * SRS FR-1.3, FR-5.4.
+ *
+ * @param {string} userId
+ * @returns {Promise<{ message: string, status: string }>}
+ */
+async function restoreAccount(userId) {
+  const user = await accountDeletionRepository.getUserSecurityContext(userId);
+  if (!user) {
+    throw new AppError(404, 'NOT_FOUND', 'User not found.');
+  }
+
+  if (user.status !== 'deletion_pending' || !user.deletedAt) {
+    throw new AppError(400, 'ACCOUNT_NOT_DELETION_PENDING', 'Account is not scheduled for deletion.');
+  }
+
+  await withTransaction(async (client) => {
+    await accountDeletionRepository.restoreAccountStatus(userId, client);
+    await accountDeletionRepository.restoreUserContent(userId, user.deletedAt, client);
+  });
+
+  return {
+    message: 'Account restored successfully. Welcome back!',
+    status: 'active',
+  };
+}
+
 module.exports = {
   getMe,
   updateProfile,
   uploadAvatar,
   getSettings,
   updateSettings,
+  deleteAccount,
+  restoreAccount,
   resolveAvatarUrl,
   isValidImageBytes,
 };

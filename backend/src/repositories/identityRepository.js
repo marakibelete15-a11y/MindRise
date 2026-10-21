@@ -134,9 +134,65 @@ async function findContactDestinationByUserId(userId, client = null) {
   return null;
 }
 
+/**
+ * Inserts an identity access audit log record.
+ * SRS 5.4, FR-7.3.
+ *
+ * @param {object} params
+ * @param {string} params.actorId
+ * @param {string} params.targetUserId
+ * @param {string} params.reason
+ * @param {object} [client]
+ * @returns {Promise<object>}
+ */
+async function insertAccessLog({ actorId, targetUserId, reason }, client = null) {
+  const queryExecutor = client || pool;
+  const sql = `
+    INSERT INTO identity_access_log (actor_id, target_user_id, reason)
+    VALUES ($1, $2, $3)
+    RETURNING id, actor_id, target_user_id, reason, created_at
+  `;
+  const result = await queryExecutor.query(sql, [actorId, targetUserId, reason]);
+  return result.rows[0];
+}
+
+/**
+ * Fetches raw verified identity record for audited staff access.
+ * SRS 5.4.
+ *
+ * @param {string} userId
+ * @param {object} [client]
+ * @returns {Promise<object|null>}
+ */
+async function findRawIdentityByUserId(userId, client = null) {
+  const queryExecutor = client || pool;
+  const sql = `
+    SELECT
+      user_id,
+      first_name,
+      last_name,
+      email,
+      phone,
+      email_verified_at,
+      phone_verified_at,
+      terms_accepted_at,
+      disclaimer_accepted_at,
+      consent_version,
+      created_at,
+      updated_at
+    FROM verified_identities
+    WHERE user_id = $1
+  `;
+  const result = await queryExecutor.query(sql, [userId]);
+  if (result.rows.length === 0) return null;
+  return result.rows[0];
+}
+
 module.exports = {
   createVerifiedIdentity,
   findAuthByIdentifier,
   markContactVerified,
   findContactDestinationByUserId,
+  insertAccessLog,
+  findRawIdentityByUserId,
 };

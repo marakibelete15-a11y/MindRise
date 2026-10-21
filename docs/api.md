@@ -67,6 +67,7 @@ Errors conform to `{ "error": { "code": "...", "message": "...", "details": [...
 | GET | `/me/settings` | Authenticated user | FR-5.2 |
 | PATCH | `/me/settings` | Authenticated user | FR-5.2 |
 | DELETE | `/me` | Authenticated user | FR-5.4 |
+| POST | `/me/restore` | Authenticated user (deletion_pending) | FR-5.4 |
 | GET | `/resources` | Anyone | FR-5.1, 5.3 |
 | GET | `/crisis/active` | Authenticated user | FR-4.6, FR-6.1, 6.2 |
 | POST | `/crisis/acknowledge` | Authenticated user | FR-6.2 |
@@ -113,9 +114,9 @@ Errors conform to `{ "error": { "code": "...", "message": "...", "details": [...
 | POST | `/mod/users/:userId/suspend` | Moderator/admin | FR-7.2 |
 | POST | `/mod/users/:userId/ban` | Admin | FR-7.2 |
 | GET | `/mod/log` | Moderator/admin | FR-7.3 |
-| GET | `/notifications` | Authenticated user | FR-5.x |
-| PATCH | `/notifications/:notificationId/read` | Notification owner | FR-5.x |
-| POST | `/notifications/read-all` | Authenticated user | FR-5.x |
+| GET | `/me/notifications` | Authenticated user | FR-5.x |
+| POST | `/me/notifications/:notificationId/read` | Notification owner | FR-5.x |
+| POST | `/me/notifications/read-all` | Authenticated user | FR-5.x |
 
 The `login`, `recover`, and `offline` screens are additional screens implied by the SRS flows even where the screen list does not name them explicitly. Identity values, assessment answers, reporter IDs, OTPs, and tokens must not be included in public responses or logs.
 
@@ -375,9 +376,57 @@ Updates user preferences. Validates timezone against valid IANA timezones.
 - **Error Codes**:
   - `400 VALIDATION_ERROR`: Invalid language code or non-existent IANA timezone.
 
+### DELETE `/api/me`
+Initiates account deletion. Requires password confirmation. Immediately transitions account status to `deletion_pending`, records `deleted_at`, and hides user's posts and comments from public feeds. Grants a 30-day recovery window before permanent purge.
+
+- **Access**: Authenticated (`Authorization: Bearer <JWT>`)
+- **Request Body**:
+  ```json
+  {
+    "password": "mySecurePassword123"
+  }
+  ```
+- **Response** `200 OK`:
+  ```json
+  {
+    "message": "Account scheduled for deletion. Your profile and content are now hidden.",
+    "purgeDate": "2026-11-20T06:00:00.000Z"
+  }
+  ```
+- **Error Codes**:
+  - `400 VALIDATION_ERROR`: Missing or invalid password format.
+  - `400 INVALID_CREDENTIALS`: Password does not match.
+  - `400 ACCOUNT_ALREADY_DELETION_PENDING`: Account already pending deletion.
+- **Example**:
+  ```bash
+  curl -s -X DELETE http://localhost:3000/api/me \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"password":"mySecurePassword123"}'
+  ```
+
+### POST `/api/me/restore`
+Restores an account scheduled for deletion within the 30-day recovery window. Transitions account status back to `active`, clears `deleted_at`, and unhides content that was hidden during deletion.
+
+- **Access**: Authenticated with `deletion_pending` token (`Authorization: Bearer <JWT>`)
+- **Response** `200 OK`:
+  ```json
+  {
+    "message": "Account restored successfully. Welcome back!",
+    "status": "active"
+  }
+  ```
+- **Error Codes**:
+  - `400 ACCOUNT_NOT_DELETION_PENDING`: Account is not scheduled for deletion.
+- **Example**:
+  ```bash
+  curl -s -X POST http://localhost:3000/api/me/restore \
+    -H "Authorization: Bearer $TOKEN"
+  ```
+
 ## Notification Endpoints (FR-5.x)
 
-### GET `/api/me/notifications` (or `/api/notifications`)
+### GET `/api/me/notifications`
 Lists in-app notifications with cursor pagination and unread count.
 
 - **Access**: Authenticated (`Authorization: Bearer <JWT>`)
@@ -401,7 +450,7 @@ Lists in-app notifications with cursor pagination and unread count.
   }
   ```
 
-### POST `/api/me/notifications/:id/read` (or `PATCH /api/notifications/:id/read`)
+### POST `/api/me/notifications/:id/read` (or `PATCH /api/me/notifications/:id/read`)
 Marks a single notification as read. Enforces strict ownership: returns 404 if notification belongs to another user.
 
 - **Access**: Authenticated (`Authorization: Bearer <JWT>`)
@@ -409,7 +458,7 @@ Marks a single notification as read. Enforces strict ownership: returns 404 if n
 - **Error Codes**:
   - `404 NOT_FOUND`: Notification does not exist or belongs to another user (IDOR defense).
 
-### POST `/api/me/notifications/read-all` (or `POST /api/notifications/read-all`)
+### POST `/api/me/notifications/read-all`
 Marks all unread notifications for the current user as read.
 
 - **Access**: Authenticated (`Authorization: Bearer <JWT>`)

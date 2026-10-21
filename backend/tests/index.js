@@ -11,6 +11,7 @@ require('./middleware.test');
 require('./identity-privacy.test');
 require('./auth.test');
 require('./stage3.test');
+require('./stage4.test');
 
 const test = require('node:test');
 const db = require('./helpers/db');

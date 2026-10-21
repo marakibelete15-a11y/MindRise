@@ -5,7 +5,7 @@ const notificationService = require('../services/notificationService');
 
 /**
  * Lists user notifications.
- * GET /api/me/notifications or GET /api/notifications
+ * GET /api/me/notifications
  */
 async function listNotifications(req, res, next) {
   try {
@@ -21,7 +21,7 @@ async function listNotifications(req, res, next) {
 
 /**
  * Marks a specific notification as read.
- * POST /api/me/notifications/:id/read or PATCH /api/notifications/:id/read
+ * POST /api/me/notifications/:id/read or PATCH /api/me/notifications/:id/read
  */
 async function markNotificationRead(req, res, next) {
   try {
@@ -35,7 +35,7 @@ async function markNotificationRead(req, res, next) {
 
 /**
  * Marks all notifications as read.
- * POST /api/me/notifications/read-all or POST /api/notifications/read-all
+ * POST /api/me/notifications/read-all
  */
 async function markAllNotificationsRead(req, res, next) {
   try {
