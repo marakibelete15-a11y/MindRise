@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#EAF4EE">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="profile_setup.css">
+  <title>MindRise - Anonymous Profile Setup</title>
+</head>
+
+<body>
+<div class="shell">
+
+  <!-- BEGIN: TopBar -->
+  <header class="screen-header">
+    <div class="header-left">
+      <button id="back-btn" class="back-btn tap-highlight-transparent" type="button" aria-label="Go back">
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+          stroke-linecap="round"
+          stroke-linejoin="round"></path>
+  </svg>
+</button>
+
+      <div class="brand-mark" title="MindRise Calm Identity">
+        <div class="brand-mark-icon">
+          <img src="logo.svg" alt="">
+        </div>
+
+        <span class="brand-mark-label">MindRise</span>
+      </div>
+    </div>
+
+    <button class="account-btn" type="button" aria-label="Account details">
+      <svg fill="white" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+      </svg>
+    </button>
+  </header>
+  <!-- END: TopBar -->
+
+
+  <main>
+
+    <!-- BEGIN: HeroTitleSection -->
+    <section class="header-titles">
+      <h1>Anonymous Profile Setup</h1>
+      <p>
+        This is the only identity anyone will ever see.
+        Your real name stays completely private.
+      </p>
+    </section>
+    <!-- END: HeroTitleSection -->
+
+
+    <!-- BEGIN: AvatarSelectionCard -->
+    <section class="card avatar-picker-card">
+
+      <div class="avatar-glow"></div>
+
+      <div class="avatar-centerpiece">
+
+        <div class="avatar-badge-wrap">
+
+          <div class="avatar-halo">
+            <div class="avatar-halo-inner">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3c-4.5 3-7 7.5-7 12 0 4 3 6 7 6s7-2 7-6c0-4.5-2.5-9-7-12z"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"></path>
+
+                <path d="M12 8v12"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"></path>
+              </svg>
+            </div>
+          </div>
+
+          <div class="avatar-check-badge">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M4.5 12.75l6 6 9-13.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+          </div>
+
+        </div>
+
+
+        <button class="surprise-btn" type="button" id="surprise-btn">
+          Surprise me
+        </button>
+
+
+        <p class="reassurance-note">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6
+                     11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623
+                     5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751
+                     h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+          </svg>
+
+          <span>
+            Avatars are simple icons &mdash; no personal photos needed
+          </span>
+        </p>
+
+      </div>
+
+
+      <!-- Horizontal Zen Icon Picker Row -->
+      <div class="icon-picker-row no-scrollbar">
+
+        <!-- Item 1 -->
+        <div class="icon-item">
+          <button class="icon-btn selected" type="button" data-avatar="leaf" aria-label="Leaf avatar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M12 3c-4.5 3-7 7.5-7 12 0 4 3 6 7 6s7-2 7-6c0-4.5-2.5-9-7-12z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+
+              <path d="M12 8v12"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+          </button>
+
+          <div class="icon-check-mini">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M4.5 12.75l6 6 9-13.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+          </div>
+        </div>
+
+
+        <!-- Item 2 -->
+        <div class="icon-item">
+          <button class="icon-btn" type="button" data-avatar="stones" aria-label="Stacked stones avatar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <ellipse cx="12" cy="7" rx="3.5" ry="2.2"
+                       stroke-linecap="round"></ellipse>
+
+              <ellipse cx="12" cy="12.5" rx="5" ry="2.8"
+                       stroke-linecap="round"></ellipse>
+
+              <ellipse cx="12" cy="18.5" rx="6.5" ry="3.2"
+                       stroke-linecap="round"></ellipse>
+            </svg>
+          </button>
+        </div>
+
+
+        <!-- Item 3 -->
+        <div class="icon-item">
+          <button class="icon-btn" type="button" data-avatar="ripples" aria-label="Ripples avatar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M4 8c2.5 1.5 5.5 1.5 8 0s5.5-1.5 8 0"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+
+              <path d="M4 12c2.5 1.5 5.5 1.5 8 0s5.5-1.5 8 0"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+
+              <path d="M4 16c2.5 1.5 5.5 1.5 8 0s5.5-1.5 8 0"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+          </button>
+        </div>
+
+
+        <!-- Item 4 -->
+        <div class="icon-item">
+          <button class="icon-btn" type="button" data-avatar="mountain" aria-label="Mountain avatar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M3 20h18L13 5a1 1 0 00-1.8 0L3 20z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+
+              <path d="M8.5 13l3.5 3.5 4-4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+          </button>
+        </div>
+
+
+        <!-- Item 5 -->
+        <div class="icon-item">
+          <button class="icon-btn" type="button" data-avatar="moon" aria-label="Crescent moon avatar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M20.354 15.354A9 9 0 018.646 3.646
+                       9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+          </button>
+        </div>
+
+
+        <!-- Item 6 -->
+        <div class="icon-item">
+          <button class="icon-btn" type="button" data-avatar="spiral" aria-label="Spiral avatar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M12 12a2 2 0 012 2c0 2-2 3.5-4 3.5
+                       -3.5 0-6-2.5-6-6 0-5 4-8.5 9-8.5
+                       6 0 9.5 4 9.5 9.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </section>
+    <!-- END: AvatarSelectionCard -->
+
+
+    <!-- BEGIN: AnonymousHandleSection -->
+    <section class="card handle-card">
+
+      <div class="handle-card-top">
+
+        <label class="handle-label" for="handle-input">
+          Anonymous Handle <span class="required">*</span>
+        </label>
+
+        <span class="handle-safe-pill">
+          Safe &amp; Pseudonymous
+        </span>
+
+      </div>
+
+
+      <div class="handle-field-wrap">
+
+        <div class="handle-input-row">
+
+          <div class="handle-at">
+            <span>@</span>
+          </div>
+
+          <input
+            id="handle-input"
+            type="text"
+            maxlength="20"
+            value="QuietRiver22"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+          >
+
+          <button
+            class="handle-refresh-btn"
+            type="button"
+            id="handle-refresh-btn"
+            aria-label="Generate new handle"
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992
+                       m0 0h4.992m-4.993 0l3.181 3.183
+                       a8.25 8.25 0 0013.803-3.7M4.031 9.865
+                       a8.25 8.25 0 0113.803-3.7l3.181 3.182
+                       m0-4.991v4.99"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+          </button>
+
+        </div>
+
+
+        <div class="handle-status-row">
+
+          <div class="handle-error" id="handle-error" role="alert" aria-live="polite">
+            <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path d="M6 18L18 6M6 6l12 12"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </svg>
+
+            <span id="handle-error-text">
+              This handle is already taken. Try another or tap refresh.
+            </span>
+          </div>
+
+          <span class="handle-count" id="handle-count">
+            12/20
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <p class="handle-helper">
+        Choose something not tied to your identity.
+        This is what peers will see in healing spaces.
+      </p>
+
+    </section>
+    <!-- END: AnonymousHandleSection -->
+
+
+    <!-- BEGIN: ZeroCommitmentPrivacyNotice -->
+    <section class="privacy-card">
+
+      <div class="privacy-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068
+                   a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043
+                   A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593
+                   a3.746 3.746 0 01-3.296-1.043 3.746 3.746 0 01-1.043-3.296
+                   A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068
+                   a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043
+                   A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593
+                   a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296
+                   A3.745 3.745 0 0121 12z"
+                stroke-linecap="round"
+                stroke-linejoin="round"></path>
+        </svg>
+      </div>
+
+      <div class="privacy-copy">
+        <h4>Zero-commitment privacy</h4>
+        <p>
+          You can change your handle and avatar anytime without friction from your Settings.
+        </p>
+      </div>
+
+    </section>
+    <!-- END: ZeroCommitmentPrivacyNotice -->
+
+  </main>
+
+
+  <!-- BEGIN: BottomStickyAction -->
+  <footer class="primary-action-footer">
+
+ <button id="home-btn" class="continue-btn tap-highlight-transparent" type="button">
+
+  <span>Continue to MindRise</span>
+
+  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+          stroke-linecap="round"
+          stroke-linejoin="round"></path>
+  </svg>
+
+</button>
+
+  </footer>
+  <!-- END: BottomStickyAction -->
+
+</div>
+
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="profile_setup.js"></script>
+
+</body>
+</html>
